@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WhyNot Gun Control v2.0</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      padding: 20px;
+    }
+    .container { max-width: 1600px; margin: 0 auto; }
+    
+    /* Header */
+    h1 { 
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      text-align: center;
+      color: #ff6600;
+      text-shadow: 0 0 20px rgba(255, 102, 0, 0.5);
+    }
+    .subtitle {
+      text-align: center;
+      color: #999;
+      margin-bottom: 30px;
+      font-size: 0.9em;
+    }
+
+    /* Global Controls */
+    .global-controls {
+      text-align: center;
+      margin-bottom: 30px;
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .all-shoot-btn {
+      background: linear-gradient(45deg, #ff4444, #cc0000);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.5em;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(255, 68, 68, 0.5);
+      transition: all 0.3s;
+    }
+    .all-shoot-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(255, 0, 0, 0.7);
+    }
+    .all-lights-btn {
+      background: linear-gradient(45deg, #44ff44, #00cc00);
+      color: #0a0a0a;
+      padding: 15px 40px;
+      font-size: 1.2em;
+      font-weight: bold;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(68, 255, 68, 0.5);
+      transition: all 0.3s;
+    }
+    .all-lights-btn:hover {
+      transform: scale(1.05);
+    }
+
+    /* Status bar */
+    .status-bar {
+      background: #1a1a1a;
+      padding: 15px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+    .status-item {
+      text-align: center;
+    }
+    .status-value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #ff6600;
+    }
+    .status-label {
+      font-size: 0.9em;
+      color: #999;
+      margin-top: 5px;
+    }
+
+    /* Devices Grid */
+    .devices-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 20px;
+    }
+
+    /* Device Card */
+    .device-card {
+      background: #1a1a1a;
+      border-radius: 12px;
+      padding: 20px;
+      border: 2px solid #333;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s;
+    }
+    .device-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+    }
+    .device-card.gun { border-color: #ff6600; }
+    .device-card.light { border-color: #00aaff; }
+    .device-card.mast { border-color: #00ff88; }
+    .device-card.offline {
+      opacity: 0.5;
+      filter: grayscale(70%);
+    }
+
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+    .device-name {
+      font-size: 1.4em;
+      font-weight: bold;
+      color: #ff6600;
+    }
+    .device-card.light .device-name { color: #00aaff; }
+    .device-card.mast .device-name { color: #00ff88; }
+    
+    .device-status {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.85em;
+      font-weight: bold;
+    }
+    .status-online { background: #228B22; color: white; }
+    .status-offline { background: #8B0000; color: white; }
+
+    .device-type {
+      font-size: 0.9em;
+      color: #999;
+      margin-bottom: 15px;
+    }
+
+    /* Info lines */
+    .info-line {
+      padding: 5px 0;
+      font-size: 0.95em;
+      color: #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .info-line strong {
+      color: #ff6600;
+    }
+
+    /* Controls */
+    .controls {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #333;
+    }
+    .control-group {
+      margin: 12px 0;
+    }
+    .control-label {
+      display: block;
+      margin-bottom: 6px;
+      color: #aaa;
+      font-size: 0.9em;
+    }
+    .control-input {
+      width: 100%;
+      padding: 10px;
+      background: #0f0f0f;
+      border: 1px solid #444;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 14px;
+    }
+    .control-input:focus {
+      outline: none;
+      border-color: #ff6600;
+      box-shadow: 0 0 5px rgba(255, 102, 0, 0.3);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 10px 18px;
+      margin: 4px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: #ff6600;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #ff8833;
+      transform: translateY(-1px);
+    }
+    .btn-danger {
+      background: #ff4444;
+      color: white;
+    }
+    .btn-danger:hover {
+      background: #ff0000;
+      transform: translateY(-1px);
+    }
+    .btn-success {
+      background: #228B22;
+      color: white;
+    }
+    .btn-success:hover {
+      background: #2aa82a;
+      transform: translateY(-1px);
+    }
+    .btn-small {
+      padding: 4px 10px;
+      font-size: 11px;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 8px;
+    }
+
+    .rgb-inputs {
+      display: flex;
+      gap: 8px;
+    }
+    .rgb-inputs input {
+      width: 33%;
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      font-size: 1.2em;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔥 WhyNot Gun Control</h1>
+    <div class="subtitle">Master Controller v2.0 | ESP-NOW Network</div>
+    
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="status-value" id="total-devices">0</div>
+        <div class="status-label">Total Devices</div>
+      </div>
+      <div class="status-item">
+        <div class="status-value" id="online-devices">0</div>
+        <div class="status-label">Online</div>
+      </div>
+      <div class="status-item">
+        <div class="status-value" id="total-guns">0</div>
+        <div class="status-label">Guns</div>
+      </div>
+      <div class="status-item">
+        <div class="status-value" id="total-lights">0</div>
+        <div class="status-label">Lights</div>
+      </div>
+    </div>
+    
+    <!-- Global Controls -->
+    <div class="global-controls">
+      <button class="all-shoot-btn" onclick="allShoot()">🔥 ALL SHOOT</button>
+      <button class="all-lights-btn" onclick="allLightsOn()">ALL LIGHTS ON</button>
+      <button class="all-lights-btn" onclick="allLightsOff()" style="background: linear-gradient(45deg, #ff4444, #cc0000); color: white;">ALL LIGHTS OFF</button>
+    </div>
+    
+    <!-- Devices Grid -->
+    <div class="devices-grid" id="devices-container">
+      <div class="loading">Loading devices...</div>
+    </div>
+  </div>
+
+  <script>
+    let devices = [];
+    let focusedInputId = null; // Отслеживание фокусированного поля
+    let inputValues = {}; // Хранение введенных значений
+    
+    // Отслеживание фокуса на полях ввода
+    document.addEventListener('focusin', function(e) {
+      if (e.target.classList.contains('control-input')) {
+        focusedInputId = e.target.id;
+        console.log('[Focus] Field:', focusedInputId);
+      }
+    });
+    
+    document.addEventListener('focusout', function(e) {
+      if (e.target.classList.contains('control-input')) {
+        // Сохраняем значение перед потерей фокуса
+        inputValues[e.target.id] = e.target.value;
+        focusedInputId = null;
+        console.log('[Blur] Saved:', e.target.id, '=', e.target.value);
+      }
+    });
+    
+    // Отслеживание изменений в полях ввода
+    document.addEventListener('input', function(e) {
+      if (e.target.classList.contains('control-input')) {
+        inputValues[e.target.id] = e.target.value;
+      }
+    });
+    
+    // Send command to device
+    function sendCommand(to, cmd, params = {}) {
+      let body = new URLSearchParams();
+      body.append('to', to);
+      body.append('cmd', cmd);
+      
+      for (let key in params) {
+        body.append(key, params[key]);
+      }
+      
+      return fetch('/cmd', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: body
+      })
+      .then(response => response.text())
+      .then(data => {
+        console.log('[OK]', to, cmd, data);
+        return data;
+      })
+      .catch(error => {
+        console.error('[ERROR]', error);
+        alert('Error: ' + error);
+      });
+    }
+    
+    // Global commands
+    function allShoot() {
+      if (confirm('Fire all guns?')) {
+        sendCommand('all', 'SHOOT')
+          .then(() => setTimeout(refreshDevices, 500));
+      }
+    }
+    
+    function allLightsOn() {
+      sendCommand('all', 'LIGHT_ON');
+    }
+    
+    function allLightsOff() {
+      sendCommand('all', 'LIGHT_OFF');
+    }
+    
+    // Create gun card
+    function createGunCard(device) {
+      return `
+        <div class="device-card gun ${device.online ? '' : 'offline'}">
+          <div class="device-header">
+            <div class="device-name">GUN ${device.name}</div>
+            <div class="device-status ${device.online ? 'status-online' : 'status-offline'}">
+              ${device.online ? 'ONLINE' : 'OFFLINE'}
+            </div>
+          </div>
+          <div class="device-type">Autonomous Gun Controller</div>
+          
+          <div class="info-line">
+            <span><strong>Shots:</strong> ${device.shot_count || 0}</span>
+            <button class="btn btn-success btn-small" onclick="sendCommand('${device.name}', 'RESET_SHOT_COUNT')">Reset</button>
+          </div>
+          <div class="info-line">
+            <span><strong>Delay:</strong> ${device.t_delay || 0} ms</span>
+          </div>
+          
+          <div class="controls">
+            <div class="control-group">
+              <label class="control-label">Delay Before Fire (ms):</label>
+              <input type="number" class="control-input" id="${device.name}-delay" value="${device.t_delay || 0}" min="0" max="10000">
+            </div>
+            
+            <button class="btn btn-danger" style="width: 100%; font-size: 16px; padding: 12px;" onclick="sendCommand('${device.name}', 'SHOOT')">🔥 SHOOT</button>
+            
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="updateGunDelay('${device.name}')">Update Delay</button>
+              <button class="btn btn-primary" onclick="sendCommand('${device.name}', 'INFO')">Info</button>
+            </div>
+            
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="sendCommand('${device.name}', 'CAL')">Calibrate</button>
+              <button class="btn btn-primary" onclick="sendCommand('${device.name}', 'HOME')">Home</button>
+              <button class="btn btn-danger" onclick="sendCommand('${device.name}', 'STOP')">STOP</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Create light card
+    function createLightCard(device) {
+      return `
+        <div class="device-card light ${device.online ? '' : 'offline'}">
+          <div class="device-header">
+            <div class="device-name">LIGHT ${device.name}</div>
+            <div class="device-status ${device.online ? 'status-online' : 'status-offline'}">
+              ${device.online ? 'ONLINE' : 'OFFLINE'}
+            </div>
+          </div>
+          <div class="device-type">LED Controller (5 channels)</div>
+          
+          <div class="info-line">
+            <span><strong>Status:</strong> ${device.on ? 'ON' : 'OFF'}</span>
+          </div>
+          <div class="info-line">
+            <span><strong>Color:</strong> RGB(${device.r || 255}, ${device.g || 100}, ${device.b || 0})</span>
+            <div style="width: 30px; height: 20px; background: rgb(${device.r || 255}, ${device.g || 100}, ${device.b || 0}); border: 1px solid #666; border-radius: 4px;"></div>
+          </div>
+          
+          <div class="controls">
+            <div class="control-group">
+              <label class="control-label">RGB Color (all channels):</label>
+              <div class="rgb-inputs">
+                <input type="number" class="control-input" id="${device.name}-r" placeholder="R" min="0" max="255" value="${device.r || 255}">
+                <input type="number" class="control-input" id="${device.name}-g" placeholder="G" min="0" max="255" value="${device.g || 100}">
+                <input type="number" class="control-input" id="${device.name}-b" placeholder="B" min="0" max="255" value="${device.b || 0}">
+              </div>
+            </div>
+            
+            <div class="btn-group">
+              <button class="btn btn-primary" onclick="updateLightColor('${device.name}')">Set Color</button>
+              <button class="btn btn-primary" onclick="sendCommand('${device.name}', 'INFO')">Info</button>
+            </div>
+            
+            <div class="btn-group">
+              <button class="btn btn-success" onclick="sendCommand('${device.name}', 'LIGHT_ON')">ALL ON</button>
+              <button class="btn btn-danger" onclick="sendCommand('${device.name}', 'LIGHT_OFF')">ALL OFF</button>
+            </div>
+            
+            <div class="btn-group">
+              <button class="btn btn-primary btn-small" onclick="setQuickColor('${device.name}', 255, 0, 0)">Red</button>
+              <button class="btn btn-primary btn-small" onclick="setQuickColor('${device.name}', 0, 255, 0)">Green</button>
+              <button class="btn btn-primary btn-small" onclick="setQuickColor('${device.name}', 0, 0, 255)">Blue</button>
+              <button class="btn btn-primary btn-small" onclick="setQuickColor('${device.name}', 255, 100, 0)">Fire</button>
+            </div>
+            
+            <hr style="border: none; border-top: 1px solid #333; margin: 15px 0;">
+            
+            <details style="margin-top: 10px;">
+              <summary style="cursor: pointer; color: #ff6600; font-weight: bold; margin-bottom: 10px;">⚙️ Individual Channel Control</summary>
+              
+              ${[0, 1, 2, 3, 4].map(ch => `
+                <div style="background: #0f0f0f; padding: 10px; margin: 8px 0; border-radius: 6px; border: 1px solid #333;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <strong style="color: #00aaff;">Channel ${ch}</strong>
+                    <div class="btn-group" style="margin: 0;">
+                      <button class="btn btn-success btn-small" onclick="sendCommand('${device.name}', 'LIGHT_ON${ch}')">ON</button>
+                      <button class="btn btn-danger btn-small" onclick="sendCommand('${device.name}', 'LIGHT_OFF${ch}')">OFF</button>
+                    </div>
+                  </div>
+                  
+                  <div class="control-group" style="margin: 5px 0;">
+                    <label class="control-label">Brightness (0-255):</label>
+                    <input type="range" class="control-input" id="${device.name}-ch${ch}-brightness" min="0" max="255" value="255" 
+                           oninput="document.getElementById('${device.name}-ch${ch}-brightness-val').textContent = this.value"
+                           onchange="sendCommand('${device.name}', 'LIGHT_BRIGHTNESS${ch}', {value: this.value})">
+                    <span id="${device.name}-ch${ch}-brightness-val" style="color: #ff6600; font-weight: bold;">255</span>
+                  </div>
+                  
+                  <div class="control-group" style="margin: 5px 0;">
+                    <label class="control-label">Speed (0-100):</label>
+                    <input type="range" class="control-input" id="${device.name}-ch${ch}-speed" min="0" max="100" value="50"
+                           oninput="document.getElementById('${device.name}-ch${ch}-speed-val').textContent = this.value"
+                           onchange="sendCommand('${device.name}', 'LIGHT_SPEED${ch}', {value: this.value})">
+                    <span id="${device.name}-ch${ch}-speed-val" style="color: #ff6600; font-weight: bold;">50</span>
+                  </div>
+                </div>
+              `).join('')}
+              
+            </details>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Create mast card
+    function createMastCard(device) {
+      return `
+        <div class="device-card mast ${device.online ? '' : 'offline'}">
+          <div class="device-header">
+            <div class="device-name">MAST ${device.name}</div>
+            <div class="device-status ${device.online ? 'status-online' : 'status-offline'}">
+              ${device.online ? 'ONLINE' : 'OFFLINE'}
+            </div>
+          </div>
+          <div class="device-type">Mast Controller</div>
+          
+          <div class="controls">
+            <div class="btn-group">
+              <button class="btn btn-success" onclick="sendCommand('${device.name}', 'MAST_UP')">UP</button>
+              <button class="btn btn-danger" onclick="sendCommand('${device.name}', 'MAST_DOWN')">DOWN</button>
+              <button class="btn btn-danger" onclick="sendCommand('${device.name}', 'MAST_STOP')">STOP</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
+    // Update functions
+    function updateGunDelay(deviceName) {
+      const delay = document.getElementById(deviceName + '-delay').value;
+      sendCommand(deviceName, 'SET_DELAY', {value: delay})
+        .then(() => setTimeout(refreshDevices, 500));
+    }
+    
+    function updateLightColor(deviceName) {
+      const r = document.getElementById(deviceName + '-r').value;
+      const g = document.getElementById(deviceName + '-g').value;
+      const b = document.getElementById(deviceName + '-b').value;
+      sendCommand(deviceName, 'LIGHT_COLOR', {r: r, g: g, b: b});
+    }
+    
+    function setQuickColor(deviceName, r, g, b) {
+      document.getElementById(deviceName + '-r').value = r;
+      document.getElementById(deviceName + '-g').value = g;
+      document.getElementById(deviceName + '-b').value = b;
+      inputValues[deviceName + '-r'] = r;
+      inputValues[deviceName + '-g'] = g;
+      inputValues[deviceName + '-b'] = b;
+      sendCommand(deviceName, 'LIGHT_COLOR', {r: r, g: g, b: b});
+    }
+    
+    // Refresh devices with input preservation
+    function refreshDevices() {
+      // ВАЖНО: НЕ обновляем если пользователь активно вводит данные!
+      if (focusedInputId) {
+        console.log('[SKIP] Refresh skipped - user is typing in:', focusedInputId);
+        return;
+      }
+      
+      fetch('/devices')
+        .then(response => response.json())
+        .then(data => {
+          devices = data;
+          const container = document.getElementById('devices-container');
+          
+          if (data.length === 0) {
+            container.innerHTML = '<div class="loading">No devices registered. Waiting for slaves...</div>';
+            updateStats(0, 0, 0, 0);
+            return;
+          }
+          
+          // Update statistics
+          let total = data.length;
+          let online = data.filter(d => d.online).length;
+          let guns = data.filter(d => d.type === 'gun').length;
+          let lights = data.filter(d => d.type === 'light').length;
+          updateStats(total, online, guns, lights);
+          
+          // Render cards
+          container.innerHTML = '';
+          data.forEach(device => {
+            let card = '';
+            if (device.type === 'gun') {
+              card = createGunCard(device);
+            } else if (device.type === 'light') {
+              card = createLightCard(device);
+            } else if (device.type === 'mast') {
+              card = createMastCard(device);
+            }
+            container.innerHTML += card;
+          });
+          
+          // Restore input values after rendering
+          setTimeout(() => {
+            for (let inputId in inputValues) {
+              let input = document.getElementById(inputId);
+              if (input && input.value !== inputValues[inputId]) {
+                input.value = inputValues[inputId];
+              }
+            }
+            
+            // Restore focus if input was focused
+            if (focusedInputId) {
+              let focusedInput = document.getElementById(focusedInputId);
+              if (focusedInput) {
+                focusedInput.focus();
+                // Restore cursor position to the end
+                focusedInput.setSelectionRange(focusedInput.value.length, focusedInput.value.length);
+              }
+            }
+          }, 50);
+        })
+        .catch(error => {
+          console.error('[ERROR] Fetching devices:', error);
+          document.getElementById('devices-container').innerHTML = 
+            '<div class="loading">Error loading devices. Check connection.</div>';
+        });
+    }
+    
+    function updateStats(total, online, guns, lights) {
+      document.getElementById('total-devices').textContent = total;
+      document.getElementById('online-devices').textContent = online;
+      document.getElementById('total-guns').textContent = guns;
+      document.getElementById('total-lights').textContent = lights;
+    }
+    
+    // Auto-refresh every 3 seconds
+    setInterval(refreshDevices, 3000);
+    
+    // Initial load
+    refreshDevices();
+  </script>
+</body>
+</html>
