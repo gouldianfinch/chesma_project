@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WhyNot Control v3.1</title>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { touch-action: manipulation; }
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      color: #e0e0e0;
+      padding: 15px;
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .container { max-width: 1800px; margin: 0 auto; }
+    
+    h1 { 
+      font-size: 2.2em;
+      margin-bottom: 5px;
+      text-align: center;
+      background: linear-gradient(45deg, #ff6600, #ff3300);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 0 30px rgba(255, 102, 0, 0.3);
+    }
+    .subtitle {
+      text-align: center;
+      color: #999;
+      margin-bottom: 15px;
+      font-size: 0.85em;
+    }
+
+    /* Toast notifications */
+    .toast-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .toast {
+      background: #2a2a2a;
+      border-left: 4px solid #ff6600;
+      padding: 12px 18px;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      min-width: 280px;
+      animation: slideIn 0.3s ease;
+      font-size: 14px;
+    }
+    .toast.success { border-left-color: #00cc00; }
+    .toast.error { border-left-color: #ff0000; }
+    @keyframes slideIn {
+      from { transform: translateX(400px); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* Refresh button */
+    .refresh-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff6600, #ff3300);
+      border: none;
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255, 102, 0, 0.4);
+      z-index: 1000;
+      transition: all 0.3s;
+    }
+    .refresh-btn:hover {
+      transform: scale(1.1);
+      box-shadow: 0 6px 30px rgba(255, 102, 0, 0.6);
+    }
+    .refresh-btn:active {
+      transform: scale(0.95);
+    }
+
+    /* Global Controls */
+    .global-controls {
+      text-align: center;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn-massive {
+      background: linear-gradient(45deg, #ff4444, #cc0000);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 1.6em;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 25px rgba(255, 68, 68, 0.5);
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .btn-massive:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 35px rgba(255, 0, 0, 0.7);
+    }
+    .btn-massive:active {
+      transform: scale(0.98);
+    }
+
+    /* Status bar */
+    .status-bar {
+      background: rgba(26, 26, 26, 0.8);
+      backdrop-filter: blur(10px);
+      padding: 12px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 15px;
+      border: 1px solid #333;
+    }
+    .status-item {
+      text-align: center;
+    }
+    .status-value {
+      font-size: 1.8em;
+      font-weight: bold;
+      background: linear-gradient(45deg, #ff6600, #ffaa00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .status-label {
+      font-size: 0.8em;
+      color: #999;
+      margin-top: 3px;
+    }
+
+    /* Devices Grid */
+    .devices-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+      gap: 18px;
+    }
+
+    /* Device Card */
+    .device-card {
+      background: rgba(26, 26, 26, 0.9);
+      backdrop-filter: blur(10px);
+      border-radius: 15px;
+      padding: 18px;
+      border: 2px solid #333;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+      transition: all 0.3s;
+    }
+    .device-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+    }
+    .device-card.gun { 
+      border-image: linear-gradient(135deg, #ff6600, #ff3300) 1;
+    }
+    .device-card.light { 
+      border-image: linear-gradient(135deg, #00aaff, #0066ff) 1;
+    }
+    .device-card.offline {
+      opacity: 0.5;
+      filter: grayscale(70%);
+    }
+
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid #333;
+    }
+    .device-name {
+      font-size: 1.4em;
+      font-weight: bold;
+      background: linear-gradient(45deg, #ff6600, #ffaa00);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .device-card.light .device-name { 
+      background: linear-gradient(45deg, #00aaff, #00ffff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    
+    .device-status {
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 0.8em;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+    }
+    .status-online { 
+      background: linear-gradient(45deg, #228B22, #32CD32);
+      color: white;
+      box-shadow: 0 0 12px rgba(50, 205, 50, 0.5);
+    }
+    .status-offline { 
+      background: #8B0000;
+      color: white;
+      animation: none;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+
+    .device-type {
+      font-size: 0.85em;
+      color: #999;
+      margin-bottom: 12px;
+    }
+
+    /* Info section */
+    .info-section {
+      background: rgba(15, 15, 15, 0.5);
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .info-line {
+      padding: 4px 0;
+      font-size: 0.9em;
+      color: #ccc;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .info-line strong {
+      color: #ff6600;
+      font-weight: 600;
+    }
+
+    /* Collapsible sections - CRITICAL FIX */
+    details {
+      background: rgba(15, 15, 15, 0.3);
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 10px;
+      margin: 8px 0;
+      transition: background 0.2s;
+    }
+    details[open] {
+      background: rgba(15, 15, 15, 0.5);
+    }
+    summary {
+      cursor: pointer;
+      color: #ff6600;
+      font-weight: bold;
+      font-size: 1em;
+      padding: 4px;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      outline: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    summary:hover {
+      color: #ffaa00;
+    }
+    summary::-webkit-details-marker {
+      display: none;
+    }
+    summary::before {
+      content: '▸';
+      font-size: 1.1em;
+      transition: transform 0.2s;
+      display: inline-block;
+    }
+    details[open] summary::before {
+      transform: rotate(90deg);
+    }
+
+    /* Controls */
+    .controls {
+      margin-top: 12px;
+    }
+    .control-group {
+      margin: 8px 0;
+    }
+    .control-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .control-label {
+      display: block;
+      margin-bottom: 5px;
+      color: #aaa;
+      font-size: 0.85em;
+      font-weight: 500;
+    }
+    .control-input {
+      width: 100%;
+      padding: 8px;
+      background: rgba(15, 15, 15, 0.8);
+      border: 2px solid #444;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .control-input:focus {
+      outline: none;
+      border-color: #ff6600;
+      box-shadow: 0 0 8px rgba(255, 102, 0, 0.3);
+      background: rgba(15, 15, 15, 1);
+    }
+
+    /* Buttons */
+    .btn {
+      padding: 8px 15px;
+      margin: 3px;
+      border: none;
+      border-radius: 7px;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 600;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #ff6600, #ff8800);
+      color: white;
+      box-shadow: 0 3px 12px rgba(255, 102, 0, 0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #ff8833, #ffaa33);
+      transform: translateY(-2px);
+      box-shadow: 0 5px 18px rgba(255, 102, 0, 0.4);
+    }
+    .btn-danger {
+      background: linear-gradient(135deg, #ff4444, #ff0000);
+      color: white;
+      box-shadow: 0 3px 12px rgba(255, 0, 0, 0.3);
+    }
+    .btn-danger:hover {
+      background: linear-gradient(135deg, #ff0000, #cc0000);
+      transform: translateY(-2px);
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #00cc00, #00ff00);
+      color: white;
+      box-shadow: 0 3px 12px rgba(0, 204, 0, 0.3);
+    }
+    .btn-success:hover {
+      background: linear-gradient(135deg, #00ff00, #33ff33);
+      transform: translateY(-2px);
+    }
+    .btn-small {
+      padding: 5px 10px;
+      font-size: 10px;
+    }
+    .btn:active {
+      transform: translateY(0) !important;
+    }
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin: 8px 0;
+    }
+    .btn-save {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      color: white;
+      width: 100%;
+      padding: 10px;
+      font-size: 13px;
+      margin-top: 8px;
+    }
+    .btn-save:hover {
+      background: linear-gradient(135deg, #45a049, #3d8b40);
+    }
+
+    /* Loading */
+    .loading {
+      text-align: center;
+      padding: 30px;
+      font-size: 1.1em;
+      color: #666;
+    }
+
+    /* Color preview */
+    .color-preview {
+      width: 35px;
+      height: 22px;
+      border: 2px solid #666;
+      border-radius: 5px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.5);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .devices-grid {
+        grid-template-columns: 1fr;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+      .btn-massive {
+        font-size: 1.3em;
+        padding: 12px 30px;
+      }
+      .refresh-btn {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔫 WhyNot Control</h1>
+    <div class="subtitle">v3.1 - Manual Refresh (No Auto-Update)</div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- Manual Refresh Button -->
+    <button class="refresh-btn" onclick="refreshDevices()" title="Refresh Devices">🔄</button>
+
+    <div class="global-controls">
+      <button class="btn-massive" onclick="sendToAll('gun', 'SHOOT')">🔥 SHOOT ALL</button>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-item">
+        <div class="status-value" id="total-devices">0</div>
+        <div class="status-label">Total</div>
+      </div>
+      <div class="status-item">
+        <div class="status-value" id="online-devices">0</div>
+        <div class="status-label">Online</div>
+      </div>
+      <div class="status-item">
+        <div class="status-value" id="total-guns">0</div>
+        <div class="status-label">Guns</div>
+      </div>
+      <div class="status-item">
+        <div class="status-value" id="total-lights">0</div>
+        <div class="status-label">Lights</div>
+      </div>
+    </div>
+
+    <div class="devices-grid" id="devices-container">
+      <div class="loading">Loading devices...</div>
+    </div>
+  </div>
+
+  <script>
+    let devices = [];
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast ' + type;
+      toast.textContent = message;
+      container.appendChild(toast);
+      
+      setTimeout(() => {
+        toast.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    async function sendCommand(deviceName, cmd, params = {}) {
+      const formData = new FormData();
+      formData.append('to', deviceName);
+      formData.append('cmd', cmd);
+      
+      for (let key in params) {
+        formData.append(key, params[key]);
+      }
+
+      try {
+        const response = await fetch('/cmd', {
+          method: 'POST',
+          body: formData
+        });
+        
+        if (response.ok) {
+          showToast('✓ ' + cmd + ' → ' + deviceName, 'success');
+          return true;
+        } else {
+          showToast('✗ Failed: ' + cmd, 'error');
+          return false;
+        }
+      } catch (error) {
+        showToast('✗ Network error', 'error');
+        return false;
+      }
+    }
+
+    function sendToAll(type, cmd) {
+      const filtered = devices.filter(d => d.type === type && d.online);
+      if (filtered.length === 0) {
+        showToast('No online ' + type + ' devices', 'error');
+        return;
+      }
+      
+      filtered.forEach(device => {
+        sendCommand(device.name, cmd);
+      });
+    }
+
+    function setGunParam(deviceName, paramName, value) {
+      sendCommand(deviceName, 'SET_' + paramName, {value: value});
+    }
+
+    function setGunRGB(deviceName, rgbNum, r, g, b) {
+      sendCommand(deviceName, 'SET_RGB' + rgbNum, {r: r, g: g, b: b});
+    }
+
+    function createGunCard(device) {
+      const shotCount = device.shot_count || 0;
+      const tDelay = device.t_delay || 0;
+
+      return '<div class="device-card gun ' + (device.online ? '' : 'offline') + '">' +
+        '<div class="device-header">' +
+          '<div class="device-name">🔫 ' + device.name + '</div>' +
+          '<div class="device-status ' + (device.online ? 'status-online' : 'status-offline') + '">' +
+            (device.online ? '● ONLINE' : '○ OFFLINE') +
+          '</div>' +
+        '</div>' +
+        '<div class="device-type">Effect Gun Controller</div>' +
+        '<div class="info-section">' +
+          '<div class="info-line"><span><strong>Shots:</strong></span><span style="font-size:1.2em;color:#ffaa00">' + shotCount + '</span></div>' +
+          '<div class="info-line"><span><strong>Delay:</strong></span><span>' + tDelay + ' ms</span></div>' +
+        '</div>' +
+        '<div class="controls">' +
+          '<div class="btn-group">' +
+            '<button class="btn btn-danger" style="flex:1" onclick="sendCommand(\'' + device.name + '\', \'SHOOT\')">🔥 SHOOT</button>' +
+            '<button class="btn btn-primary" onclick="sendCommand(\'' + device.name + '\', \'FIRE\')">Fire</button>' +
+          '</div>' +
+          '<div class="btn-group">' +
+            '<button class="btn btn-primary" onclick="sendCommand(\'' + device.name + '\', \'OPEN_PORT\')">Open Port</button>' +
+            '<button class="btn btn-primary" onclick="sendCommand(\'' + device.name + '\', \'CLOSE_PORT\')">Close Port</button>' +
+            '<button class="btn btn-danger" onclick="sendCommand(\'' + device.name + '\', \'STOP\')">STOP</button>' +
+          '</div>' +
+          
+          '<details>' +
+            '<summary>⏱️ Timing</summary>' +
+            '<div class="control-group">' +
+              '<label class="control-label">Fire Delay (ms):</label>' +
+              '<input type="number" class="control-input" id="' + device.name + '-delay" value="' + tDelay + '" min="0" max="10000" step="100">' +
+            '</div>' +
+            '<div class="control-row">' +
+              '<div class="control-group"><label class="control-label">Preheat:</label><input type="number" class="control-input" id="' + device.name + '-t_preheat" value="3000" min="0" max="10000" step="100"></div>' +
+              '<div class="control-group"><label class="control-label">Solenoid:</label><input type="number" class="control-input" id="' + device.name + '-t_sol" value="500" min="0" max="5000" step="50"></div>' +
+              '<div class="control-group"><label class="control-label">LED:</label><input type="number" class="control-input" id="' + device.name + '-t_led" value="3500" min="0" max="10000" step="100"></div>' +
+            '</div>' +
+            '<button class="btn btn-save" onclick="saveGunTiming(\'' + device.name + '\')">💾 Save</button>' +
+          '</details>' +
+          
+          '<details>' +
+            '<summary>📍 Positions</summary>' +
+            '<div class="control-row">' +
+              '<div class="control-group"><label class="control-label">Pos1 (Home):</label><input type="number" class="control-input" id="' + device.name + '-pos1" value="0"></div>' +
+              '<div class="control-group"><label class="control-label">Pos2:</label><input type="number" class="control-input" id="' + device.name + '-pos2" value="1000"></div>' +
+              '<div class="control-group"><label class="control-label">Pos3:</label><input type="number" class="control-input" id="' + device.name + '-pos3" value="2000"></div>' +
+            '</div>' +
+            '<button class="btn btn-save" onclick="saveGunPositions(\'' + device.name + '\')">💾 Save</button>' +
+          '</details>' +
+          
+          '<details>' +
+            '<summary>⚡ Motor Speeds</summary>' +
+            '<div class="control-row">' +
+              '<div class="control-group"><label class="control-label">M1 Speed:</label><input type="number" class="control-input" id="' + device.name + '-speed1" value="150" min="0" max="255"></div>' +
+              '<div class="control-group"><label class="control-label">M2 Speed:</label><input type="number" class="control-input" id="' + device.name + '-speed2" value="180" min="0" max="255"></div>' +
+            '</div>' +
+            '<button class="btn btn-save" onclick="saveGunSpeeds(\'' + device.name + '\')">💾 Save</button>' +
+          '</details>' +
+          
+          '<details>' +
+            '<summary>🎨 LED Colors</summary>' +
+            '<div class="control-group">' +
+              '<label class="control-label">Start (RGB1):</label>' +
+              '<div class="control-row">' +
+                '<input type="number" class="control-input" id="' + device.name + '-rgb1-r" placeholder="R" min="0" max="255" value="250">' +
+                '<input type="number" class="control-input" id="' + device.name + '-rgb1-g" placeholder="G" min="0" max="255" value="20">' +
+                '<input type="number" class="control-input" id="' + device.name + '-rgb1-b" placeholder="B" min="0" max="255" value="0">' +
+                '<div class="color-preview" style="background:rgb(250,20,0)"></div>' +
+              '</div>' +
+            '</div>' +
+            '<div class="control-group">' +
+              '<label class="control-label">End (RGB2):</label>' +
+              '<div class="control-row">' +
+                '<input type="number" class="control-input" id="' + device.name + '-rgb2-r" placeholder="R" min="0" max="255" value="255">' +
+                '<input type="number" class="control-input" id="' + device.name + '-rgb2-g" placeholder="G" min="0" max="255" value="90">' +
+                '<input type="number" class="control-input" id="' + device.name + '-rgb2-b" placeholder="B" min="0" max="255" value="0">' +
+                '<div class="color-preview" style="background:rgb(255,90,0)"></div>' +
+              '</div>' +
+            '</div>' +
+            '<button class="btn btn-save" onclick="saveGunColors(\'' + device.name + '\')">💾 Save</button>' +
+          '</details>' +
+          
+          '<details>' +
+            '<summary>🔧 Jerk M1</summary>' +
+            '<div class="control-row">' +
+              '<div class="control-group"><label class="control-label">Count:</label><input type="number" class="control-input" id="' + device.name + '-jerk_count1" value="5" min="0" max="20"></div>' +
+              '<div class="control-group"><label class="control-label">ON ms:</label><input type="number" class="control-input" id="' + device.name + '-jerk_on_ms1" value="400" min="0" max="2000"></div>' +
+              '<div class="control-group"><label class="control-label">OFF ms:</label><input type="number" class="control-input" id="' + device.name + '-jerk_off_ms1" value="500" min="0" max="2000"></div>' +
+              '<div class="control-group"><label class="control-label">Speed:</label><input type="number" class="control-input" id="' + device.name + '-jerk_speed1" value="90" min="0" max="255"></div>' +
+            '</div>' +
+            '<button class="btn btn-save" onclick="saveGunJerk1(\'' + device.name + '\')">💾 Save</button>' +
+          '</details>' +
+          
+          '<details>' +
+            '<summary>🔧 Jerk M2</summary>' +
+            '<div class="control-row">' +
+              '<div class="control-group"><label class="control-label">Count:</label><input type="number" class="control-input" id="' + device.name + '-jerk_count2" value="5" min="0" max="20"></div>' +
+              '<div class="control-group"><label class="control-label">ON ms:</label><input type="number" class="control-input" id="' + device.name + '-jerk_on_ms2" value="200" min="0" max="2000"></div>' +
+              '<div class="control-group"><label class="control-label">OFF ms:</label><input type="number" class="control-input" id="' + device.name + '-jerk_off_ms2" value="100" min="0" max="2000"></div>' +
+              '<div class="control-group"><label class="control-label">Speed:</label><input type="number" class="control-input" id="' + device.name + '-jerk_speed2" value="180" min="0" max="255"></div>' +
+            '</div>' +
+            '<button class="btn btn-save" onclick="saveGunJerk2(\'' + device.name + '\')">💾 Save</button>' +
+          '</details>' +
+          
+          '<details>' +
+            '<summary>📈 Ramp</summary>' +
+            '<div class="control-row">' +
+              '<div class="control-group"><label class="control-label">Low:</label><input type="number" class="control-input" id="' + device.name + '-ramp_low" value="50" min="0" max="255"></div>' +
+              '<div class="control-group"><label class="control-label">High:</label><input type="number" class="control-input" id="' + device.name + '-ramp_high" value="200" min="0" max="255"></div>' +
+              '<div class="control-group"><label class="control-label">Step:</label><input type="number" class="control-input" id="' + device.name + '-ramp_step" value="5" min="1" max="50"></div>' +
+            '</div>' +
+            '<button class="btn btn-save" onclick="saveGunRamp(\'' + device.name + '\')">💾 Save</button>' +
+          '</details>' +
+          
+          '<details>' +
+            '<summary>🛠️ Maintenance</summary>' +
+            '<div class="btn-group">' +
+              '<button class="btn btn-primary" onclick="sendCommand(\'' + device.name + '\', \'CAL\')">Calibrate</button>' +
+              '<button class="btn btn-primary" onclick="sendCommand(\'' + device.name + '\', \'HOME\')">Home</button>' +
+              '<button class="btn btn-primary" onclick="sendCommand(\'' + device.name + '\', \'INFO\')">Info</button>' +
+            '</div>' +
+            '<button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="if(confirm(\'Reset shot counter?\')) sendCommand(\'' + device.name + '\', \'RESET_SHOT_COUNT\')">🔄 Reset Counter</button>' +
+          '</details>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function saveGunTiming(name) {
+      setGunParam(name, 'DELAY', document.getElementById(name + '-delay').value);
+      setGunParam(name, 'T_PREHEAT', document.getElementById(name + '-t_preheat').value);
+      setGunParam(name, 'T_SOL', document.getElementById(name + '-t_sol').value);
+      setGunParam(name, 'T_LED', document.getElementById(name + '-t_led').value);
+    }
+
+    function saveGunPositions(name) {
+      setGunParam(name, 'POS1', document.getElementById(name + '-pos1').value);
+      setGunParam(name, 'POS2', document.getElementById(name + '-pos2').value);
+      setGunParam(name, 'POS3', document.getElementById(name + '-pos3').value);
+    }
+
+    function saveGunSpeeds(name) {
+      setGunParam(name, 'SPEED1', document.getElementById(name + '-speed1').value);
+      setGunParam(name, 'SPEED2', document.getElementById(name + '-speed2').value);
+    }
+
+    function saveGunColors(name) {
+      const r1 = document.getElementById(name + '-rgb1-r').value;
+      const g1 = document.getElementById(name + '-rgb1-g').value;
+      const b1 = document.getElementById(name + '-rgb1-b').value;
+      setGunRGB(name, 1, r1, g1, b1);
+
+      const r2 = document.getElementById(name + '-rgb2-r').value;
+      const g2 = document.getElementById(name + '-rgb2-g').value;
+      const b2 = document.getElementById(name + '-rgb2-b').value;
+      setGunRGB(name, 2, r2, g2, b2);
+    }
+
+    function saveGunJerk1(name) {
+      setGunParam(name, 'JERK_COUNT1', document.getElementById(name + '-jerk_count1').value);
+      setGunParam(name, 'JERK_ON_MS1', document.getElementById(name + '-jerk_on_ms1').value);
+      setGunParam(name, 'JERK_OFF_MS1', document.getElementById(name + '-jerk_off_ms1').value);
+      setGunParam(name, 'JERK_SPEED1', document.getElementById(name + '-jerk_speed1').value);
+    }
+
+    function saveGunJerk2(name) {
+      setGunParam(name, 'JERK_COUNT2', document.getElementById(name + '-jerk_count2').value);
+      setGunParam(name, 'JERK_ON_MS2', document.getElementById(name + '-jerk_on_ms2').value);
+      setGunParam(name, 'JERK_OFF_MS2', document.getElementById(name + '-jerk_off_ms2').value);
+      setGunParam(name, 'JERK_SPEED2', document.getElementById(name + '-jerk_speed2').value);
+    }
+
+    function saveGunRamp(name) {
+      setGunParam(name, 'RAMP_LOW', document.getElementById(name + '-ramp_low').value);
+      setGunParam(name, 'RAMP_HIGH', document.getElementById(name + '-ramp_high').value);
+      setGunParam(name, 'RAMP_STEP', document.getElementById(name + '-ramp_step').value);
+    }
+
+    function createLightCard(device) {
+      return '<div class="device-card light ' + (device.online ? '' : 'offline') + '">' +
+        '<div class="device-header">' +
+          '<div class="device-name">💡 ' + device.name + '</div>' +
+          '<div class="device-status ' + (device.online ? 'status-online' : 'status-offline') + '">' +
+            (device.online ? '● ONLINE' : '○ OFFLINE') +
+          '</div>' +
+        '</div>' +
+        '<div class="device-type">LED Controller (5 channels)</div>' +
+        '<div class="info-section">' +
+          '<div class="info-line"><span><strong>Status:</strong> ' + (device.on ? 'ON' : 'OFF') + '</span></div>' +
+          '<div class="info-line"><span><strong>Color:</strong></span><div class="color-preview" style="background:rgb(' + (device.r||255) + ',' + (device.g||100) + ',' + (device.b||0) + ')"></div></div>' +
+        '</div>' +
+        '<div class="controls">' +
+          '<div class="control-group">' +
+            '<label class="control-label">RGB (all channels):</label>' +
+            '<div class="control-row">' +
+              '<input type="number" class="control-input" id="' + device.name + '-r" placeholder="R" min="0" max="255" value="' + (device.r||255) + '">' +
+              '<input type="number" class="control-input" id="' + device.name + '-g" placeholder="G" min="0" max="255" value="' + (device.g||100) + '">' +
+              '<input type="number" class="control-input" id="' + device.name + '-b" placeholder="B" min="0" max="255" value="' + (device.b||0) + '">' +
+            '</div>' +
+          '</div>' +
+          '<div class="btn-group">' +
+            '<button class="btn btn-primary" onclick="updateLightColor(\'' + device.name + '\')">Set Color</button>' +
+            '<button class="btn btn-success" onclick="sendCommand(\'' + device.name + '\', \'LIGHT_ON\')">ALL ON</button>' +
+            '<button class="btn btn-danger" onclick="sendCommand(\'' + device.name + '\', \'LIGHT_OFF\')">ALL OFF</button>' +
+          '</div>' +
+          '<div class="btn-group">' +
+            '<button class="btn btn-small" onclick="setQuickColor(\'' + device.name + '\', 255, 0, 0)">Red</button>' +
+            '<button class="btn btn-small" onclick="setQuickColor(\'' + device.name + '\', 0, 255, 0)">Green</button>' +
+            '<button class="btn btn-small" onclick="setQuickColor(\'' + device.name + '\', 0, 0, 255)">Blue</button>' +
+            '<button class="btn btn-small" onclick="setQuickColor(\'' + device.name + '\', 255, 100, 0)">Fire</button>' +
+            '<button class="btn btn-small" onclick="setQuickColor(\'' + device.name + '\', 255, 255, 255)">White</button>' +
+          '</div>' +
+          '<details>' +
+            '<summary>🎛️ Individual Channels</summary>' +
+            '<div style="padding:8px 0">' +
+              [0,1,2,3,4].map(ch => 
+                '<div style="background:rgba(15,15,15,0.4);padding:8px;margin:6px 0;border-radius:6px">' +
+                  '<div style="display:flex;justify-content:space-between;margin-bottom:6px">' +
+                    '<strong style="color:#00aaff">Ch ' + ch + '</strong>' +
+                    '<div class="btn-group" style="margin:0">' +
+                      '<button class="btn btn-success btn-small" onclick="sendCommand(\'' + device.name + '\', \'LIGHT_ON' + ch + '\')">ON</button>' +
+                      '<button class="btn btn-danger btn-small" onclick="sendCommand(\'' + device.name + '\', \'LIGHT_OFF' + ch + '\')">OFF</button>' +
+                    '</div>' +
+                  '</div>' +
+                  '<div class="control-group">' +
+                    '<label class="control-label">Brightness: <span id="' + device.name + '-ch' + ch + '-val">255</span></label>' +
+                    '<input type="range" class="control-input" min="0" max="255" value="255" oninput="document.getElementById(\'' + device.name + '-ch' + ch + '-val\').textContent = this.value" onchange="sendCommand(\'' + device.name + '\', \'LIGHT_BRIGHTNESS' + ch + '\', {value: this.value})">' +
+                  '</div>' +
+                '</div>'
+              ).join('') +
+            '</div>' +
+          '</details>' +
+        '</div>' +
+      '</div>';
+    }
+
+    function updateLightColor(deviceName) {
+      const r = document.getElementById(deviceName + '-r').value;
+      const g = document.getElementById(deviceName + '-g').value;
+      const b = document.getElementById(deviceName + '-b').value;
+      sendCommand(deviceName, 'LIGHT_COLOR', {r: r, g: g, b: b});
+    }
+
+    function setQuickColor(deviceName, r, g, b) {
+      document.getElementById(deviceName + '-r').value = r;
+      document.getElementById(deviceName + '-g').value = g;
+      document.getElementById(deviceName + '-b').value = b;
+      sendCommand(deviceName, 'LIGHT_COLOR', {r: r, g: g, b: b});
+    }
+
+    async function refreshDevices() {
+      try {
+        const response = await fetch('/devices');
+        const data = await response.json();
+        devices = data;
+        
+        const container = document.getElementById('devices-container');
+        
+        if (data.length === 0) {
+          container.innerHTML = '<div class="loading">No devices found. Waiting...</div>';
+          updateStats(0, 0, 0, 0);
+          return;
+        }
+        
+        let total = data.length;
+        let online = data.filter(d => d.online).length;
+        let guns = data.filter(d => d.type === 'gun').length;
+        let lights = data.filter(d => d.type === 'light').length;
+        updateStats(total, online, guns, lights);
+        
+        container.innerHTML = '';
+        data.forEach(device => {
+          let card = '';
+          if (device.type === 'gun') {
+            card = createGunCard(device);
+          } else if (device.type === 'light') {
+            card = createLightCard(device);
+          }
+          container.innerHTML += card;
+        });
+
+        showToast('✓ Devices updated', 'success');
+
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('devices-container').innerHTML = 
+          '<div class="loading">Error loading devices. Check connection.</div>';
+        showToast('✗ Update failed', 'error');
+      }
+    }
+
+    function updateStats(total, online, guns, lights) {
+      document.getElementById('total-devices').textContent = total;
+      document.getElementById('online-devices').textContent = online;
+      document.getElementById('total-guns').textContent = guns;
+      document.getElementById('total-lights').textContent = lights;
+    }
+
+    // Initial load
+    refreshDevices();
+  </script>
+</body>
+</html>

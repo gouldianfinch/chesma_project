@@ -510,7 +510,7 @@ void handleCommand(String cmd) {
 // =================== SETUP ===================
 void setup() {
   Serial.begin(115200);
-  delay(100);
+  delay(3000);
   Serial.println("\n=== " + MY_NAME + " (LIGHT v2.0) ===");
 
   // Initialize FastLED

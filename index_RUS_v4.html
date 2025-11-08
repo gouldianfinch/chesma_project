@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WhyNot Управление v4.0</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:'Segoe UI',sans-serif; background:#0a0a0a; color:#e0e0e0; padding:15px; }
+    .container { max-width:1600px; margin:0 auto; }
+    h1 { font-size:2em; text-align:center; color:#ff6600; margin-bottom:10px; }
+    .subtitle { text-align:center; color:#999; font-size:0.9em; margin-bottom:20px; }
+    
+    .toast-container { position:fixed; top:20px; right:20px; z-index:9999; display:flex; flex-direction:column; gap:10px; }
+    .toast { background:#2a2a2a; border-left:4px solid #ff6600; padding:12px 18px; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,0.5); animation:slideIn 0.3s; }
+    .toast.success { border-left-color:#00cc00; }
+    .toast.error { border-left-color:#ff0000; }
+    @keyframes slideIn { from{transform:translateX(400px);opacity:0} to{transform:translateX(0);opacity:1} }
+    
+    .refresh-btn { position:fixed; bottom:20px; right:20px; width:60px; height:60px; border-radius:50%; background:linear-gradient(135deg,#ff6600,#ff3300); border:none; color:white; font-size:24px; cursor:pointer; box-shadow:0 4px 20px rgba(255,102,0,0.4); z-index:1000; }
+    .refresh-btn:hover { transform:scale(1.1); }
+    
+    .global-btn { background:linear-gradient(45deg,#ff4444,#cc0000); color:white; border:none; padding:15px 40px; font-size:1.5em; font-weight:bold; border-radius:10px; cursor:pointer; box-shadow:0 0 25px rgba(255,68,68,0.5); margin:10px; }
+    .global-btn:hover { transform:scale(1.05); }
+    
+    .status-bar { background:rgba(26,26,26,0.8); padding:12px; border-radius:10px; margin-bottom:20px; display:flex; justify-content:space-around; gap:15px; flex-wrap:wrap; }
+    .status-item { text-align:center; }
+    .status-value { font-size:1.8em; font-weight:bold; color:#ff6600; }
+    .status-label { font-size:0.8em; color:#999; }
+    
+    .devices-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(380px,1fr)); gap:15px; }
+    
+    details { background:rgba(26,26,26,0.9); border:2px solid #333; border-radius:12px; padding:15px; margin:10px 0; cursor:pointer; transition:all 0.3s; }
+    details:hover { transform:translateY(-3px); box-shadow:0 8px 25px rgba(0,0,0,0.5); }
+    details.gun { border-color:#ff6600; }
+    details.light { border-color:#00aaff; }
+    details[open] { border-width:3px; }
+    
+    summary { list-style:none; font-size:1.3em; font-weight:bold; padding:10px; display:flex; justify-content:space-between; align-items:center; user-select:none; }
+    summary::-webkit-details-marker { display:none; }
+    summary .device-name { color:#ff6600; }
+    details.light summary .device-name { color:#00aaff; }
+    summary .status { padding:4px 12px; border-radius:20px; font-size:0.7em; }
+    .status-online { background:#228B22; color:white; }
+    .status-offline { background:#8B0000; color:white; }
+    
+    .info { background:rgba(15,15,15,0.5); padding:10px; border-radius:8px; margin:10px 0; }
+    .info-line { padding:5px 0; font-size:0.9em; display:flex; justify-content:space-between; }
+    .info-line strong { color:#ff6600; }
+    
+    .section { background:rgba(15,15,15,0.3); border:1px solid #333; border-radius:8px; padding:10px; margin:8px 0; }
+    .section-title { color:#ff6600; font-weight:bold; margin-bottom:8px; font-size:1em; }
+    
+    .control-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(100px,1fr)); gap:8px; margin:8px 0; }
+    .control-label { display:block; margin-bottom:5px; color:#aaa; font-size:0.85em; }
+    .control-input { width:100%; padding:8px; background:rgba(15,15,15,0.8); border:2px solid #444; border-radius:6px; color:#fff; font-size:13px; }
+    .control-input:focus { outline:none; border-color:#ff6600; }
+    
+    .btn { padding:8px 15px; margin:3px; border:none; border-radius:7px; cursor:pointer; font-size:12px; font-weight:600; transition:all 0.2s; }
+    .btn-primary { background:linear-gradient(135deg,#ff6600,#ff8800); color:white; }
+    .btn-primary:hover { background:linear-gradient(135deg,#ff8833,#ffaa33); transform:translateY(-2px); }
+    .btn-danger { background:linear-gradient(135deg,#ff4444,#ff0000); color:white; }
+    .btn-danger:hover { transform:translateY(-2px); }
+    .btn-success { background:linear-gradient(135deg,#00cc00,#00ff00); color:white; }
+    .btn-success:hover { transform:translateY(-2px); }
+    .btn-small { padding:5px 10px; font-size:10px; }
+    .btn-save { background:linear-gradient(135deg,#4CAF50,#45a049); color:white; width:100%; padding:10px; margin-top:8px; }
+    .btn-group { display:flex; flex-wrap:wrap; gap:4px; margin:8px 0; }
+    
+    .color-preview { width:35px; height:22px; border:2px solid #666; border-radius:5px; }
+    
+    @media (max-width:768px) {
+      .devices-grid { grid-template-columns:1fr; }
+      h1 { font-size:1.6em; }
+      .global-btn { font-size:1.2em; padding:12px 30px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔫 WhyNot Управление</h1>
+    <div class="subtitle">v4.0 - Русский интерфейс</div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <button class="refresh-btn" onclick="refreshDevices()" title="Обновить">🔄</button>
+
+    <div style="text-align:center">
+      <button class="global-btn" onclick="sendToAll('gun','SHOOT')">🔥 СТРЕЛЬБА ВСЕМИ</button>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-item"><div class="status-value" id="total">0</div><div class="status-label">Всего</div></div>
+      <div class="status-item"><div class="status-value" id="online">0</div><div class="status-label">Онлайн</div></div>
+      <div class="status-item"><div class="status-value" id="guns">0</div><div class="status-label">Пушки</div></div>
+      <div class="status-item"><div class="status-value" id="lights">0</div><div class="status-label">Свет</div></div>
+    </div>
+
+    <div class="devices-grid" id="devices"></div>
+  </div>
+
+  <script>
+    let devices = [];
+
+    function showToast(msg, type='info') {
+      const t = document.createElement('div');
+      t.className = 'toast ' + type;
+      t.textContent = msg;
+      document.getElementById('toast-container').appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    async function sendCmd(to, cmd, params={}) {
+      const fd = new FormData();
+      fd.append('to', to);
+      fd.append('cmd', cmd);
+      for(let k in params) fd.append(k, params[k]);
+      try {
+        const r = await fetch('/cmd', {method:'POST', body:fd});
+        if(r.ok) { showToast('✓ ' + cmd + ' → ' + to, 'success'); return true; }
+        else { showToast('✗ Ошибка', 'error'); return false; }
+      } catch(e) { showToast('✗ Сеть', 'error'); return false; }
+    }
+
+    function sendToAll(type, cmd) {
+      const f = devices.filter(d => d.type === type && d.online);
+      if(f.length === 0) { showToast('Нет устройств типа ' + type, 'error'); return; }
+      f.forEach(d => sendCmd(d.name, cmd));
+    }
+
+    function setParam(name, param, val) { sendCmd(name, 'SET_' + param, {value:val}); }
+    function setRGB(name, num, r, g, b) { sendCmd(name, 'SET_RGB'+num, {r:r, g:g, b:b}); }
+
+    function saveGunTiming(n) {
+      setParam(n, 'DELAY', document.getElementById(n+'-delay').value);
+      setParam(n, 'T_PREHEAT', document.getElementById(n+'-preheat').value);
+      setParam(n, 'T_SOL', document.getElementById(n+'-sol').value);
+      setParam(n, 'T_LED', document.getElementById(n+'-led').value);
+    }
+
+    function saveGunPos(n) {
+      setParam(n, 'POS1', document.getElementById(n+'-pos1').value);
+      setParam(n, 'POS2', document.getElementById(n+'-pos2').value);
+      setParam(n, 'POS3', document.getElementById(n+'-pos3').value);
+    }
+
+    function saveGunPort(n) {
+      setParam(n, 'PORT_PULSES', document.getElementById(n+'-port').value);
+    }
+
+    function saveGunSpeeds(n) {
+      setParam(n, 'SPEED1', document.getElementById(n+'-s1').value);
+      setParam(n, 'SPEED2', document.getElementById(n+'-s2').value);
+    }
+
+    function saveGunColors(n) {
+      const r1 = document.getElementById(n+'-r1').value;
+      const g1 = document.getElementById(n+'-g1').value;
+      const b1 = document.getElementById(n+'-b1').value;
+      setRGB(n, 1, r1, g1, b1);
+      const r2 = document.getElementById(n+'-r2').value;
+      const g2 = document.getElementById(n+'-g2').value;
+      const b2 = document.getElementById(n+'-b2').value;
+      setRGB(n, 2, r2, g2, b2);
+    }
+
+    function saveGunJerk1(n) {
+      setParam(n, 'JERK_COUNT1', document.getElementById(n+'-jc1').value);
+      setParam(n, 'JERK_ON_MS1', document.getElementById(n+'-jo1').value);
+      setParam(n, 'JERK_OFF_MS1', document.getElementById(n+'-jf1').value);
+      setParam(n, 'JERK_SPEED1', document.getElementById(n+'-js1').value);
+    }
+
+    function saveGunJerk2(n) {
+      setParam(n, 'JERK_COUNT2', document.getElementById(n+'-jc2').value);
+      setParam(n, 'JERK_ON_MS2', document.getElementById(n+'-jo2').value);
+      setParam(n, 'JERK_OFF_MS2', document.getElementById(n+'-jf2').value);
+      setParam(n, 'JERK_SPEED2', document.getElementById(n+'-js2').value);
+    }
+
+    function saveGunRamp(n) {
+      setParam(n, 'RAMP_LOW', document.getElementById(n+'-rl').value);
+      setParam(n, 'RAMP_HIGH', document.getElementById(n+'-rh').value);
+      setParam(n, 'RAMP_STEP', document.getElementById(n+'-rs').value);
+    }
+
+    function createGunCard(d) {
+      return '<details class="gun">' +
+        '<summary>' +
+          '<span class="device-name">🔫 ' + d.name + '</span>' +
+          '<span class="status ' + (d.online ? 'status-online' : 'status-offline') + '">' +
+          (d.online ? 'ОНЛАЙН' : 'ОФЛАЙН') + '</span>' +
+        '</summary>' +
+        '<div class="info">' +
+          '<div class="info-line"><strong>Выстрелов:</strong> <span>' + (d.shot_count||0) + '</span></div>' +
+          '<div class="info-line"><strong>Задержка:</strong> <span>' + (d.t_delay||0) + ' мс</span></div>' +
+        '</div>' +
+        '<div class="btn-group">' +
+          '<button class="btn btn-danger" style="flex:1" onclick="sendCmd(\''+d.name+'\',\'SHOOT\')">🔥 ВЫСТРЕЛ</button>' +
+          '<button class="btn btn-primary" onclick="sendCmd(\''+d.name+'\',\'FIRE\')">Огонь</button>' +
+          '<button class="btn btn-danger" onclick="sendCmd(\''+d.name+'\',\'STOP\')">СТОП</button>' +
+        '</div>' +
+        '<div class="btn-group">' +
+          '<button class="btn btn-primary" onclick="sendCmd(\''+d.name+'\',\'OPEN_PORT\')">Открыть порт</button>' +
+          '<button class="btn btn-primary" onclick="sendCmd(\''+d.name+'\',\'CLOSE_PORT\')">Закрыть порт</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">⏱️ Тайминги</div>' +
+          '<div class="control-row">' +
+            '<div><label class="control-label">Задержка (мс):</label><input type="number" class="control-input" id="'+d.name+'-delay" value="'+(d.t_delay||0)+'" min="0" max="10000" step="100"></div>' +
+            '<div><label class="control-label">Прогрев:</label><input type="number" class="control-input" id="'+d.name+'-preheat" value="3000" min="0" max="10000" step="100"></div>' +
+            '<div><label class="control-label">Соленоид:</label><input type="number" class="control-input" id="'+d.name+'-sol" value="500" min="0" max="5000" step="50"></div>' +
+            '<div><label class="control-label">LED:</label><input type="number" class="control-input" id="'+d.name+'-led" value="3500" min="0" max="10000" step="100"></div>' +
+          '</div>' +
+          '<button class="btn btn-save" onclick="saveGunTiming(\''+d.name+'\')">💾 Сохранить</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">📍 Позиции (мм)</div>' +
+          '<div class="control-row">' +
+            '<div><label class="control-label">Поз1 (дом):</label><input type="number" class="control-input" id="'+d.name+'-pos1" value="20" step="0.1"></div>' +
+            '<div><label class="control-label">Поз2:</label><input type="number" class="control-input" id="'+d.name+'-pos2" value="60" step="0.1"></div>' +
+            '<div><label class="control-label">Поз3:</label><input type="number" class="control-input" id="'+d.name+'-pos3" value="10" step="0.1"></div>' +
+          '</div>' +
+          '<button class="btn btn-save" onclick="saveGunPos(\''+d.name+'\')">💾 Сохранить</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">🔧 Порт (импульсы Холла)</div>' +
+          '<div><label class="control-label">Импульсов датчика:</label><input type="number" class="control-input" id="'+d.name+'-port" value="3" min="1" max="20"></div>' +
+          '<button class="btn btn-save" onclick="saveGunPort(\''+d.name+'\')">💾 Сохранить</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">⚡ Скорости моторов</div>' +
+          '<div class="control-row">' +
+            '<div><label class="control-label">Мотор 1:</label><input type="number" class="control-input" id="'+d.name+'-s1" value="150" min="0" max="255"></div>' +
+            '<div><label class="control-label">Мотор 2:</label><input type="number" class="control-input" id="'+d.name+'-s2" value="180" min="0" max="255"></div>' +
+          '</div>' +
+          '<button class="btn btn-save" onclick="saveGunSpeeds(\''+d.name+'\')">💾 Сохранить</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">🎨 Цвета LED</div>' +
+          '<div><label class="control-label">Начальный (RGB1):</label></div>' +
+          '<div class="control-row">' +
+            '<input type="number" class="control-input" id="'+d.name+'-r1" placeholder="R" value="250" min="0" max="255">' +
+            '<input type="number" class="control-input" id="'+d.name+'-g1" placeholder="G" value="20" min="0" max="255">' +
+            '<input type="number" class="control-input" id="'+d.name+'-b1" placeholder="B" value="0" min="0" max="255">' +
+            '<div class="color-preview" style="background:rgb(250,20,0)"></div>' +
+          '</div>' +
+          '<div><label class="control-label">Конечный (RGB2):</label></div>' +
+          '<div class="control-row">' +
+            '<input type="number" class="control-input" id="'+d.name+'-r2" placeholder="R" value="255" min="0" max="255">' +
+            '<input type="number" class="control-input" id="'+d.name+'-g2" placeholder="G" value="90" min="0" max="255">' +
+            '<input type="number" class="control-input" id="'+d.name+'-b2" placeholder="B" value="0" min="0" max="255">' +
+            '<div class="color-preview" style="background:rgb(255,90,0)"></div>' +
+          '</div>' +
+          '<button class="btn btn-save" onclick="saveGunColors(\''+d.name+'\')">💾 Сохранить</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">🔧 Jerk Мотор 1</div>' +
+          '<div class="control-row">' +
+            '<div><label class="control-label">Циклов:</label><input type="number" class="control-input" id="'+d.name+'-jc1" value="5" min="0" max="20"></div>' +
+            '<div><label class="control-label">Вкл (мс):</label><input type="number" class="control-input" id="'+d.name+'-jo1" value="400" min="0" max="2000"></div>' +
+            '<div><label class="control-label">Выкл (мс):</label><input type="number" class="control-input" id="'+d.name+'-jf1" value="500" min="0" max="2000"></div>' +
+            '<div><label class="control-label">Скорость:</label><input type="number" class="control-input" id="'+d.name+'-js1" value="90" min="0" max="255"></div>' +
+          '</div>' +
+          '<button class="btn btn-save" onclick="saveGunJerk1(\''+d.name+'\')">💾 Сохранить</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">🔧 Jerk Мотор 2</div>' +
+          '<div class="control-row">' +
+            '<div><label class="control-label">Циклов:</label><input type="number" class="control-input" id="'+d.name+'-jc2" value="5" min="0" max="20"></div>' +
+            '<div><label class="control-label">Вкл (мс):</label><input type="number" class="control-input" id="'+d.name+'-jo2" value="200" min="0" max="2000"></div>' +
+            '<div><label class="control-label">Выкл (мс):</label><input type="number" class="control-input" id="'+d.name+'-jf2" value="100" min="0" max="2000"></div>' +
+            '<div><label class="control-label">Скорость:</label><input type="number" class="control-input" id="'+d.name+'-js2" value="180" min="0" max="255"></div>' +
+          '</div>' +
+          '<button class="btn btn-save" onclick="saveGunJerk2(\''+d.name+'\')">💾 Сохранить</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">📈 Разгон (Ramp)</div>' +
+          '<div class="control-row">' +
+            '<div><label class="control-label">Мин:</label><input type="number" class="control-input" id="'+d.name+'-rl" value="50" min="0" max="255"></div>' +
+            '<div><label class="control-label">Макс:</label><input type="number" class="control-input" id="'+d.name+'-rh" value="200" min="0" max="255"></div>' +
+            '<div><label class="control-label">Шаг:</label><input type="number" class="control-input" id="'+d.name+'-rs" value="5" min="1" max="50"></div>' +
+          '</div>' +
+          '<button class="btn btn-save" onclick="saveGunRamp(\''+d.name+'\')">💾 Сохранить</button>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">🛠️ Обслуживание</div>' +
+          '<div class="btn-group">' +
+            '<button class="btn btn-primary" onclick="sendCmd(\''+d.name+'\',\'CAL\')">Калибровка</button>' +
+            '<button class="btn btn-primary" onclick="sendCmd(\''+d.name+'\',\'HOME\')">Домой</button>' +
+            '<button class="btn btn-primary" onclick="sendCmd(\''+d.name+'\',\'INFO\')">Инфо</button>' +
+          '</div>' +
+          '<button class="btn btn-danger" style="width:100%;margin-top:8px" onclick="if(confirm(\'Сбросить счётчик?\'))sendCmd(\''+d.name+'\',\'RESET_SHOT_COUNT\')">🔄 Сброс счётчика</button>' +
+        '</div>' +
+      '</details>';
+    }
+
+    function createLightCard(d) {
+      return '<details class="light">' +
+        '<summary>' +
+          '<span class="device-name">💡 ' + d.name + '</span>' +
+          '<span class="status ' + (d.online ? 'status-online' : 'status-offline') + '">' +
+          (d.online ? 'ОНЛАЙН' : 'ОФЛАЙН') + '</span>' +
+        '</summary>' +
+        '<div class="info">' +
+          '<div class="info-line"><strong>Статус:</strong> <span>' + (d.on ? 'ВКЛ' : 'ВЫКЛ') + '</span></div>' +
+          '<div class="info-line"><strong>Цвет:</strong> <div class="color-preview" style="background:rgb('+(d.r||255)+','+(d.g||100)+','+(d.b||0)+')"></div></div>' +
+        '</div>' +
+        '<div class="section">' +
+          '<div class="section-title">🎨 Цвет (все каналы)</div>' +
+          '<div class="control-row">' +
+            '<input type="number" class="control-input" id="'+d.name+'-r" placeholder="R" value="'+(d.r||255)+'" min="0" max="255">' +
+            '<input type="number" class="control-input" id="'+d.name+'-g" placeholder="G" value="'+(d.g||100)+'" min="0" max="255">' +
+            '<input type="number" class="control-input" id="'+d.name+'-b" placeholder="B" value="'+(d.b||0)+'" min="0" max="255">' +
+          '</div>' +
+          '<div class="btn-group">' +
+            '<button class="btn btn-primary" onclick="setLightColor(\''+d.name+'\')">Установить</button>' +
+            '<button class="btn btn-success" onclick="sendCmd(\''+d.name+'\',\'LIGHT_ON\')">ВСЕ ВКЛ</button>' +
+            '<button class="btn btn-danger" onclick="sendCmd(\''+d.name+'\',\'LIGHT_OFF\')">ВСЕ ВЫКЛ</button>' +
+          '</div>' +
+          '<div class="btn-group">' +
+            '<button class="btn btn-small" onclick="quickColor(\''+d.name+'\',255,0,0)">Красный</button>' +
+            '<button class="btn btn-small" onclick="quickColor(\''+d.name+'\',0,255,0)">Зелёный</button>' +
+            '<button class="btn btn-small" onclick="quickColor(\''+d.name+'\',0,0,255)">Синий</button>' +
+            '<button class="btn btn-small" onclick="quickColor(\''+d.name+'\',255,100,0)">Огонь</button>' +
+            '<button class="btn btn-small" onclick="quickColor(\''+d.name+'\',255,255,255)">Белый</button>' +
+          '</div>' +
+        '</div>' +
+        
+        '<div class="section">' +
+          '<div class="section-title">🎛️ Индивидуальные каналы</div>' +
+          [0,1,2,3,4].map(ch =>
+            '<div style="background:rgba(15,15,15,0.4);padding:8px;margin:6px 0;border-radius:6px">' +
+              '<div style="display:flex;justify-content:space-between;margin-bottom:6px">' +
+                '<strong style="color:#00aaff">Канал '+ch+'</strong>' +
+                '<div>' +
+                  '<button class="btn btn-success btn-small" onclick="sendCmd(\''+d.name+'\',\'LIGHT_ON'+ch+'\')">ВКЛ</button>' +
+                  '<button class="btn btn-danger btn-small" onclick="sendCmd(\''+d.name+'\',\'LIGHT_OFF'+ch+'\')">ВЫКЛ</button>' +
+                '</div>' +
+              '</div>' +
+              '<div><label class="control-label">Яркость: <span id="'+d.name+'-br'+ch+'">255</span></label>' +
+              '<input type="range" class="control-input" min="0" max="255" value="255" oninput="document.getElementById(\''+d.name+'-br'+ch+'\').textContent=this.value" onchange="sendCmd(\''+d.name+'\',\'LIGHT_BRIGHTNESS'+ch+'\',{value:this.value})"></div>' +
+              '<div><label class="control-label">Скорость свечи: <span id="'+d.name+'-sp'+ch+'">50</span></label>' +
+              '<input type="range" class="control-input" min="0" max="100" value="50" oninput="document.getElementById(\''+d.name+'-sp'+ch+'\').textContent=this.value" onchange="sendCmd(\''+d.name+'\',\'LIGHT_SPEED'+ch+'\',{value:this.value})"></div>' +
+            '</div>'
+          ).join('') +
+        '</div>' +
+      '</details>';
+    }
+
+    function setLightColor(n) {
+      const r = document.getElementById(n+'-r').value;
+      const g = document.getElementById(n+'-g').value;
+      const b = document.getElementById(n+'-b').value;
+      sendCmd(n, 'LIGHT_COLOR', {r:r, g:g, b:b});
+    }
+
+    function quickColor(n, r, g, b) {
+      document.getElementById(n+'-r').value = r;
+      document.getElementById(n+'-g').value = g;
+      document.getElementById(n+'-b').value = b;
+      sendCmd(n, 'LIGHT_COLOR', {r:r, g:g, b:b});
+    }
+
+    async function refreshDevices() {
+      try {
+        const r = await fetch('/devices');
+        const data = await r.json();
+        devices = data;
+        
+        if(data.length === 0) {
+          document.getElementById('devices').innerHTML = '<div style="text-align:center;padding:30px;color:#666">Устройства не найдены</div>';
+          document.getElementById('total').textContent = '0';
+          document.getElementById('online').textContent = '0';
+          document.getElementById('guns').textContent = '0';
+          document.getElementById('lights').textContent = '0';
+          return;
+        }
+        
+        let total = data.length;
+        let online = data.filter(d => d.online).length;
+        let guns = data.filter(d => d.type === 'gun').length;
+        let lights = data.filter(d => d.type === 'light').length;
+        
+        document.getElementById('total').textContent = total;
+        document.getElementById('online').textContent = online;
+        document.getElementById('guns').textContent = guns;
+        document.getElementById('lights').textContent = lights;
+        
+        let html = '';
+        data.forEach(d => {
+          if(d.type === 'gun') html += createGunCard(d);
+          else if(d.type === 'light') html += createLightCard(d);
+        });
+        document.getElementById('devices').innerHTML = html;
+        
+        showToast('✓ Обновлено', 'success');
+      } catch(e) {
+        document.getElementById('devices').innerHTML = '<div style="text-align:center;padding:30px;color:#ff0000">Ошибка загрузки</div>';
+        showToast('✗ Ошибка', 'error');
+      }
+    }
+
+    refreshDevices();
+  </script>
+</body>
+</html>
